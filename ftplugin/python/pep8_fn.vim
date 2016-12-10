@@ -1,7 +1,7 @@
 " File: pep8_fn.vim
 " Author: Roman 'gryf' Dobosz (gryf73 at gmail.com)
-" Version: 1.1
-" Last Modified: 2010-09-12
+" Version: 1.2
+" Last Modified: 2016-12-10
 " Description: {{{
 "
 " Overview
@@ -14,7 +14,7 @@
 "
 " This script uses python, therefore VIm should be compiled with python
 " support. You can check it by issuing ":version" command, and search for
-" "+python" inside features list.
+" "+python" or "+python3" inside features list.
 "
 " Couple of ideas was taken from pyflakes.vim[3] plugin.
 "
@@ -58,96 +58,34 @@ if !exists("g:pep8_exclude")
     let g:pep8_exclude = []
 endif
 
-function! s:DiscoverPython()
-    if !exists('g:pep8_py_discovered')
+
+function! s:SetPython(msg)
+    if !exists('g:_python')
         if has('python')
-            let s:python_command = 'python'
+            let g:_python = {'exec': 'python', 'file': 'pyfile'}
         elseif has('python3')
-            let s:python_command = 'python3'
+            let g:_python = {'exec': 'python3', 'file': 'py3file'}
         else
-            echohl WarningMsg|echomsg
-                        \ "PEP8 command cannot be initialized "
-                        \ "no python support compiled in vim."|echohl None
+            echohl WarningMsg|echomsg a:msg|echohl None
             finish
         endif
-        let g:pep8_py_discovered = 1
     endif
 endfunction
 
-if !exists("b:did_pep8_init")
-    let b:did_pep8_init = 0
 
-    if !has('python')
-        echoerr "pep8_fn.vim plugin requires Vim to be compiled with +python"
-        finish
+function! s:LoadPep8()
+    if !exists('g:pep8_fn_initialized ')
+        call s:SetPython("Pep8 command cannot be initialized no python "
+                    \ "support compiled in vim.")
+        execute g:_python['file'] . ' ' . s:plugin_path . '/pep8_fn.py'
+        let g:pep8_fn_initialized = 1
     endif
-    call s:DiscoverPython()
+endfunction
 
-    python << EOF
-import vim
-import sys
-from StringIO import StringIO
 
-try:
-    import pep8
-except ImportError:
-    raise AssertionError('Error: pep8_fn.vim requires module pep8')
+call s:LoadPep8()
 
-class VImPep8(object):
-
-    def __init__(self):
-        self.fname = vim.current.buffer.name
-        self.bufnr = vim.current.buffer.number
-        self.output = []
-        self.exclude_list = vim.eval("g:pep8_exclude")
-
-    def reporter(self, lnum, col, text, check):
-        self.output.append([lnum, col, text])
-
-    def run(self):
-        pep8.process_options(['-r', vim.current.buffer.name])
-        checker = pep8.Checker(vim.current.buffer.name)
-        checker.report_error = self.reporter
-        checker.check_all()
-        self.process_output()
-
-    def process_output(self):
-        vim.command('call setqflist([])')
-        qf_list = []
-        qf_dict = {}
-
-        for line in self.output:
-            skip = False
-            for exclude_pattern in self.exclude_list:
-                if exclude_pattern in line[2]:
-                    skip = True
-                    break
-            if skip:
-                continue
-            qf_dict['bufnr'] = self.bufnr
-            qf_dict['lnum'] = line[0]
-            qf_dict['col'] = line[1]
-            qf_dict['text'] = line[2]
-            qf_dict['type'] = line[2][0]
-            qf_list.append(qf_dict)
-            qf_dict = {}
-
-        self.output = []
-        vim.command('call setqflist(%s)' % str(qf_list))
-        if qf_list:
-            vim.command('copen')
-EOF
-    let b:did_pep8_init = 1
-endif
-
-if !exists('*s:Pep8')
-    function s:Pep8()
-        python << EOF
-VImPep8().run()
-EOF
-    endfunction
-endif
-
-if !exists(":Pep8")
-    command Pep8 call s:Pep8()
-endif
+function s:Pep8()
+    execute g:_python['exec'] . ' VImPep8().run()'
+endfunction
+command Pep8 call s:Pep8()
