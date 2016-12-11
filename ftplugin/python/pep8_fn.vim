@@ -75,8 +75,8 @@ endfunction
 
 function! s:LoadPep8()
     if !exists('g:pep8_fn_initialized ')
-        call s:SetPython("Pep8 command cannot be initialized no python "
-                    \ "support compiled in vim.")
+        call s:SetPython("Pep8 command cannot be initialized - no python "
+                    \ . "support compiled in vim.")
         execute g:_python['file'] . ' ' . s:plugin_path . '/pep8_fn.py'
         let g:pep8_fn_initialized = 1
     endif
