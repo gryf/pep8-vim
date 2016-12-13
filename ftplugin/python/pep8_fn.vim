@@ -48,10 +48,8 @@
 
 let s:plugin_path = expand('<sfile>:p:h', 1)
 
-if exists("b:did_pep8_plugin")
+if exists(":Pep8")
     finish " only load once
-else
-    let b:did_pep8_plugin = 1
 endif
 
 if !exists("g:pep8_exclude")
@@ -81,7 +79,6 @@ function! s:LoadPep8()
         let g:pep8_fn_initialized = 1
     endif
 endfunction
-
 
 call s:LoadPep8()
 
