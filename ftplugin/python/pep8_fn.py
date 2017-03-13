@@ -4,7 +4,7 @@ Get pep8 output on current vim buffer using pep8.Checker object
 try:
     import pep8
 except ImportError:
-    raise AssertionError('Error: pep8_fn.vim requires module pep8')
+    pep8 = None
 
 import vim
 
@@ -24,6 +24,10 @@ class VImPep8(object):
 
     def run(self):
         """Run the checker"""
+        if not pep8:
+            vim.command("echo 'Error: pep8_fn.vim requires module pep8'")
+            return
+
         pep8.process_options(['-r', vim.current.buffer.name])
         checker = pep8.Checker(vim.current.buffer.name)
         checker.report_error = self.reporter
